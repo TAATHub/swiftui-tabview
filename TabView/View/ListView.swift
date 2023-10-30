@@ -12,10 +12,14 @@ struct ListView: View {
     
     var body: some View {
         LazyVStack() {
-            ForEach(viewModel.items, id: \.self) { _ in
+            ForEach(viewModel.items, id: \.self) { item in
                 viewModel.color
                     .frame(maxWidth: .infinity)
                     .frame(height: 200)
+                    .id(item)
+                    .onAppear {
+                        viewModel.currentId = item
+                    }
             }
             
             // TabViewをScrollViewの中に入れたことで、Lazyではなくなり、ここもすぐに実行されてしまう
@@ -40,6 +44,7 @@ struct ListView: View {
 @MainActor
 final class ListViewModel: ObservableObject {
     @Published private(set) var items: [String]
+    @Published var currentId: String?
     
     let id: Int
     let color: Color
@@ -57,7 +62,7 @@ final class ListViewModel: ObservableObject {
     }
     
     func onPageEnd() async {
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
         
         for _ in 0..<pageSize {
             items.append(UUID().uuidString)

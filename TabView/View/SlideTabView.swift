@@ -26,12 +26,13 @@ struct SlideTabView<Content: View>: View {
                         .overlay {
                             GeometryReader{ proxy in
                                 Color.clear
-                                    .onChange(of: proxy.frame(in: .global), perform: { value in
+                                    // このViewは全体のScrollViewによって上下するので、mixXのonChangeでないと余計な検出をして、スクロール時にカクカクしてしまう
+                                    .onChange(of: proxy.frame(in: .global).minX, perform: { value in
                                         // 表示中のタブをスワイプした時のみ処理する
                                         guard viewModel.selection == tabContent.id else { return }
                                         
                                         // 対象タブのスワイプ量をTabBarの比率に変換して、インジケーターのoffsetを計算する
-                                        let offset = -(value.minX - safeAreaInsetsLeading - (screenWidth * CGFloat(viewModel.selection))) / tabCount
+                                        let offset = -(value - safeAreaInsetsLeading - (screenWidth * CGFloat(viewModel.selection))) / tabCount
                                         
                                         if viewModel.selection == tabContents.first?.id {
                                             // 最初のタブの場合、offsetが0以上の時のみ位置を更新する

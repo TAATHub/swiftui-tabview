@@ -11,36 +11,41 @@ struct StickyHeaderTabView: View {
     @StateObject private var viewModel = SlideTabBarViewModel()
     
     let listViewModels = [
-        0: ListViewModel(id: 0, color: .red, pageSize: 5),
-        1: ListViewModel(id: 1, color: .green, pageSize: 3),
-        2: ListViewModel(id: 2, color: .blue, pageSize: 10)
+        ListViewModel(id: 0, color: .red, pageSize: 5),
+        ListViewModel(id: 1, color: .green, pageSize: 3),
+        ListViewModel(id: 2, color: .blue, pageSize: 10)
     ]
         
     var body: some View {
         GeometryReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                    Color.gray
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 400)
-                        .padding(.bottom, 10)
-                    
-                    Section(header: sectionHeader, footer: sectionFooter) {
-                        SlideTabView(tabContents: [
-                            SlideTabContent(id: 0, title: "Page1", content: ListView(viewModel: listViewModels[0]!, onHeightChanged: { id, height in
-                                tabViewHeights[id] = height
-                            })),
-                            SlideTabContent(id: 1, title: "Page2", content: ListView(viewModel: listViewModels[1]!, onHeightChanged: { id, height in
-                                tabViewHeights[id] = height
-                            })),
-                            SlideTabContent(id: 2, title: "Page3", content: ListView(viewModel: listViewModels[2]!, onHeightChanged: { id, height in
-                                tabViewHeights[id] = height
-                            }))
-                        ])
-                        .frame(height: tabViewHeights[viewModel.selection] ?? UIScreen.main.bounds.height)
+            ScrollViewReader { scrollViewProxy in
+                ScrollView {
+                    LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                        Color.gray
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 200)
+                            .id("top")
+                        
+                        Section(header: sectionHeader, footer: sectionFooter) {
+                            SlideTabView(tabContents: [
+                                SlideTabContent(id: 0, title: "Page1", content: ListView(viewModel: listViewModels[0], onHeightChanged: { id, height in
+                                    tabViewHeights[id] = height
+                                })),
+                                SlideTabContent(id: 1, title: "Page2", content: ListView(viewModel: listViewModels[1], onHeightChanged: { id, height in
+                                    tabViewHeights[id] = height
+                                })),
+                                SlideTabContent(id: 2, title: "Page3", content: ListView(viewModel: listViewModels[2], onHeightChanged: { id, height in
+                                    tabViewHeights[id] = height
+                                }))
+                            ])
+                            .frame(height: tabViewHeights[viewModel.selection] ?? UIScreen.main.bounds.height)
+                        }
                     }
-                    
-                    
+                    .onChange(of: viewModel.selection) { selection in
+                        // TabView内の特定のIDまでスクロースさせようとしてもダメみたい
+                        scrollViewProxy.scrollTo("top")
+//                        scrollViewProxy.scrollTo(listViewModels[selection]?.currentId ?? "top")
+                    }
                 }
             }
         }
@@ -67,7 +72,7 @@ struct StickyHeaderTabView: View {
         FooterLoadingView(isVisible: true) {
             Task {
                 print("onPageEnd")
-                await listViewModels[viewModel.selection]?.onPageEnd()
+                await listViewModels[viewModel.selection].onPageEnd()
             }
         }
         .frame(height: 60)
